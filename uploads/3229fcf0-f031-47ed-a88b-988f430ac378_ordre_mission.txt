@@ -1,0 +1,38 @@
+===========================================
+           ORDRE DE MISSION
+===========================================
+
+N° Mission    : M-2026-001
+Date          : 20/06/2026
+Demandeur     : Jean Dupont
+Service       : Logistique
+
+===========================================
+DÉTAILS DE LA MISSION
+===========================================
+
+Lieu          : Zone Industrielle, Casablanca
+Date          : 20/06/2026 - 20/06/2026
+Véhicule      : CAM-002 (Camion 5 tonnes)
+Chauffeur     : Mohamed Benali
+
+===========================================
+DESCRIPTION
+===========================================
+
+Transport de 500 kg de matériel
+- 20 caisses de pièces mécaniques
+- 10 rouleaux de câbles
+- 5 palettes de consommables
+
+===========================================
+SIGNATURES
+===========================================
+
+Demandeur : Jean Dupont
+           [Signature]
+
+Responsable : 
+           [Signature]
+
+===========================================

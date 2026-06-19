@@ -1,0 +1,37 @@
+===========================================
+       PLAN DE MAINTENANCE
+===========================================
+
+Engin         : CAM-002 (Camion 5 tonnes)
+Type          : CAMION
+Date          : 20/06/2026
+
+===========================================
+LISTE DES CONTROLES
+===========================================
+
+[✓] Niveaux d'huile - OK
+[✓] Pression des pneus - OK
+[✓] Freins - OK
+[✓] Éclairage - OK
+[ ] Vidange - À faire avant départ
+[✓] Batterie - OK
+[✓] Climatisation - OK
+[✓] Kit sécurité - Présent
+
+===========================================
+REMARQUES
+===========================================
+
+Le véhicule est en bon état général.
+Prévoir une révision complète dans 3 mois.
+
+===========================================
+TECHNICIEN
+===========================================
+
+Nom    : Karim Bensaid
+Signature : 
+Date   : 20/06/2026
+
+===========================================
