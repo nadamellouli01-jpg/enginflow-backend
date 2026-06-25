@@ -1,5 +1,6 @@
 package com.stage.EnginFlow.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stage.EnginFlow.model.*;
 import com.stage.EnginFlow.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class DemandeService {
     private final PieceJointeRepository pieceJointeRepository;
     private final DemandeActionRepository actionRepository;
     private final FileStorageService fileStorageService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // === CREER DEMANDE ===
     @Transactional
@@ -98,17 +100,14 @@ public class DemandeService {
 
     // === RECUPERER TOUTES LES DEMANDES AVEC FILTRES (ADMIN) ===
     public List<DemandeEngin> getAllDemandesWithFilters(String statut, String typeEngin, LocalDateTime dateCreation) {
-        // Si pas de filtres → toutes les demandes
         if (statut == null && typeEngin == null && dateCreation == null) {
             return demandeRepository.findAll();
         }
 
-        // Si filtre par statut uniquement → utiliser la méthode existante
         if (statut != null && !statut.isEmpty() && typeEngin == null && dateCreation == null) {
             return demandeRepository.findByStatutActuel(statut);
         }
 
-        // Pour les autres combinaisons → on filtre en mémoire
         List<DemandeEngin> demandes = demandeRepository.findAll();
 
         return demandes.stream()
@@ -153,12 +152,11 @@ public class DemandeService {
     }
 
     // === CLOTURE AUTOMATIQUE APRES 24H ===
-    @Scheduled(fixedDelay = 3600000)
+    @Scheduled(fixedDelay = 3600000) // Toutes les heures
     @Transactional
     public void cloturerDemandes() {
-        LocalDateTime dateLimite = LocalDateTime.now().minusHours(24);
-        List<DemandeEngin> demandes = demandeRepository.findDemandesACloturer(dateLimite);
-
+        LocalDateTime maintenant = LocalDateTime.now();
+        List<DemandeEngin> demandes = demandeRepository.findDemandesACloturer(maintenant);
         for (DemandeEngin demande : demandes) {
             demande.setStatutActuel("CLOTUREE");
             demande.setEstCloturee(true);
@@ -241,14 +239,63 @@ public class DemandeService {
             throw new RuntimeException("Impossible de modifier une demande déjà traitée");
         }
 
-        if (newDateHeureDebut != null)
+        // 🔧 CRÉER LA LISTE DES MODIFICATIONS AVEC ANCIENNE ET NOUVELLE VALEUR
+        Map<String, Map<String, Object>> modifications = new HashMap<>();
+
+        if (newDateHeureDebut != null && !newDateHeureDebut.equals(demande.getDateHeureDebut())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("ancien", demande.getDateHeureDebut().toString());
+            change.put("nouveau", newDateHeureDebut.toString());
+            modifications.put("dateHeureDebut", change);
+        }
+        if (newDateHeureFin != null && !newDateHeureFin.equals(demande.getDateHeureFin())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("ancien", demande.getDateHeureFin().toString());
+            change.put("nouveau", newDateHeureFin.toString());
+            modifications.put("dateHeureFin", change);
+        }
+        if (newLieu != null && !newLieu.equals(demande.getLieu())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("ancien", demande.getLieu());
+            change.put("nouveau", newLieu);
+            modifications.put("lieu", change);
+        }
+        if (newMotif != null && !newMotif.equals(demande.getMotif())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("ancien", demande.getMotif());
+            change.put("nouveau", newMotif);
+            modifications.put("motif", change);
+        }
+        if (newCodeInventaire != null && !newCodeInventaire.equals(demande.getEngin().getCodeInventaire())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("ancien", demande.getEngin().getCodeInventaire());
+            change.put("nouveau", newCodeInventaire);
+            modifications.put("codeInventaire", change);
+        }
+
+        // Stocker les modifications en JSON
+        if (!modifications.isEmpty()) {
+            try {
+                String modificationsJson = objectMapper.writeValueAsString(modifications);
+                demande.setModificationsProposees(modificationsJson);
+            } catch (Exception e) {
+                throw new RuntimeException("Erreur lors de la sérialisation des modifications");
+            }
+        }
+
+        // Appliquer les modifications directement
+        if (newDateHeureDebut != null) {
             demande.setDateHeureDebut(newDateHeureDebut);
-        if (newDateHeureFin != null)
+        }
+        if (newDateHeureFin != null) {
             demande.setDateHeureFin(newDateHeureFin);
-        if (newLieu != null)
+        }
+        if (newLieu != null) {
             demande.setLieu(newLieu);
-        if (newMotif != null)
+        }
+        if (newMotif != null) {
             demande.setMotif(newMotif);
+        }
         if (newCodeInventaire != null) {
             Engin newEngin = enginRepository.findById(newCodeInventaire)
                     .orElseThrow(() -> new RuntimeException("Engin non trouvé"));
@@ -286,13 +333,44 @@ public class DemandeService {
             throw new RuntimeException("Cette demande n'est pas en attente de confirmation");
         }
 
+        // Appliquer les modifications stockées en JSON
+        if (demande.getModificationsProposees() != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> modifications = objectMapper.readValue(
+                        demande.getModificationsProposees(),
+                        Map.class);
+
+                if (modifications.containsKey("dateHeureDebut")) {
+                    demande.setDateHeureDebut(LocalDateTime.parse((String) modifications.get("dateHeureDebut")));
+                }
+                if (modifications.containsKey("dateHeureFin")) {
+                    demande.setDateHeureFin(LocalDateTime.parse((String) modifications.get("dateHeureFin")));
+                }
+                if (modifications.containsKey("lieu")) {
+                    demande.setLieu((String) modifications.get("lieu"));
+                }
+                if (modifications.containsKey("motif")) {
+                    demande.setMotif((String) modifications.get("motif"));
+                }
+                if (modifications.containsKey("codeInventaire")) {
+                    String code = (String) modifications.get("codeInventaire");
+                    Engin engin = enginRepository.findById(code)
+                            .orElseThrow(() -> new RuntimeException("Engin non trouvé"));
+                    demande.setEngin(engin);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Erreur lors de l'application des modifications");
+            }
+        }
+
         demande.setStatutActuel("APPROUVEE");
         demande.setCommentaireAdmin(null);
         demande.setModificationsProposees(null);
         demandeRepository.save(demande);
 
         DemandeAction action = new DemandeAction();
-        action.setTypeAction("CLOTURE");
+        action.setTypeAction("VALIDATION");
         action.setCommentaire("Utilisateur a accepté les modifications");
         action.setDemande(demande);
         action.setUtilisateur(utilisateur);
@@ -318,14 +396,15 @@ public class DemandeService {
             throw new RuntimeException("Cette demande n'est pas en attente de confirmation");
         }
 
-        demande.setStatutActuel("EN_ATTENTE");
+        // ✅ Statut devient REFUSEE (définitif)
+        demande.setStatutActuel("REFUSEE");
         demande.setCommentaireAdmin(null);
         demande.setModificationsProposees(null);
         demandeRepository.save(demande);
 
         DemandeAction action = new DemandeAction();
         action.setTypeAction("REFUS");
-        action.setCommentaire("Utilisateur a refusé les modifications. Admin peut re-décider.");
+        action.setCommentaire("Utilisateur a refusé les modifications");
         action.setDemande(demande);
         action.setUtilisateur(utilisateur);
         actionRepository.save(action);

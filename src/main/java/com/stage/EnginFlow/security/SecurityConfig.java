@@ -9,6 +9,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -25,8 +30,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC : Inscription
@@ -35,9 +54,11 @@ public class SecurityConfig {
                         // PROFIL UTILISATEUR : Tous les utilisateurs connectés
                         .requestMatchers("/api/utilisateurs/me").authenticated()
 
-                        .requestMatchers("/api/demandes").authenticated()
+                        // ✅ CHANGER MOT DE PASSE : Tous les utilisateurs connectés
+                        .requestMatchers("/api/utilisateurs/me/mot-de-passe").authenticated()
 
-                        // DEMANDEUR + ADMIN : Voir les demandes
+                        // DEMANDEUR + ADMIN : Demandes
+                        .requestMatchers("/api/demandes").authenticated()
                         .requestMatchers("/api/demandes/modifiees").hasAnyRole("DEMANDEUR", "ADMINISTRATEUR")
                         .requestMatchers("/api/demandes/utilisateur/**").authenticated()
                         .requestMatchers("/api/demandes/{id}/utilisateur/**").hasRole("DEMANDEUR")

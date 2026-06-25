@@ -5,12 +5,8 @@ import com.stage.EnginFlow.dto.UtilisateurResponseDTO;
 import com.stage.EnginFlow.model.Utilisateur;
 import com.stage.EnginFlow.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +25,13 @@ public class UtilisateurService {
 
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        return convertToDTO(saved);
+        return UtilisateurResponseDTO.builder()
+                .id(saved.getId())
+                .nom(saved.getNom())
+                .prenom(saved.getPrenom())
+                .email(saved.getEmail())
+                .role(saved.getRole())
+                .build();
     }
 
     public UtilisateurResponseDTO findByEmail(String email) {
@@ -38,10 +40,10 @@ public class UtilisateurService {
         return convertToDTO(utilisateur);
     }
 
-    public List<UtilisateurResponseDTO> getAllUtilisateurs() {
-        return utilisateurRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // ✅ NOUVELLE MÉTHODE : Retourne l'entité Utilisateur
+    public Utilisateur getUtilisateurByEmail(String email) {
+        return utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
     }
 
     private UtilisateurResponseDTO convertToDTO(Utilisateur utilisateur) {
