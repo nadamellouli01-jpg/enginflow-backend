@@ -6,8 +6,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.annotation.PostConstruct;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.io.File;
 
 @RestController
 @RequestMapping("/api/uploads")
@@ -15,6 +18,14 @@ import java.nio.file.Paths;
 public class FileUploadController {
 
     private final String UPLOAD_DIR = "./uploads/";
+
+    @PostConstruct
+    public void init() {
+        File directory = new File(UPLOAD_DIR);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+    }
 
     @GetMapping("/{filename:.+}")
     public ResponseEntity<Resource> getFile(@PathVariable String filename) {
