@@ -29,7 +29,7 @@ public class UtilisateurController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/inscription")
-    @Operation(summary = "Inscription", description = "🔓 Endpoint public - Crée un nouveau compte utilisateur. Pas d'authentification requise.")
+    @Operation(summary = "Inscription", description = "🔓 Endpoint public - Crée un nouveau compte Demandeur. Pas d'authentification requise.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Utilisateur créé avec succès"),
             @ApiResponse(responseCode = "400", description = "Email déjà utilisé ou paramètres invalides")

@@ -151,12 +151,13 @@ public class DemandeService {
         return stats;
     }
 
-    // === CLOTURE AUTOMATIQUE APRES 24H ===
+    // === CLOTURE AUTOMATIQUE ===
     @Scheduled(fixedDelay = 3600000) // Toutes les heures
     @Transactional
     public void cloturerDemandes() {
         LocalDateTime maintenant = LocalDateTime.now();
         List<DemandeEngin> demandes = demandeRepository.findDemandesACloturer(maintenant);
+
         for (DemandeEngin demande : demandes) {
             demande.setStatutActuel("CLOTUREE");
             demande.setEstCloturee(true);
@@ -164,12 +165,12 @@ public class DemandeService {
 
             DemandeAction action = new DemandeAction();
             action.setTypeAction("CLOTURE");
-            action.setCommentaire("Clôture automatique après 24h");
+            action.setCommentaire("Clôture automatique - mission terminée");
             action.setDemande(demande);
             action.setUtilisateur(demande.getUtilisateur());
             actionRepository.save(action);
 
-            System.out.println("✅ Demande " + demande.getId() + " clôturée automatiquement");
+            System.out.println("✅ Demande " + demande.getId() + " clôturée (mission terminée)");
         }
     }
 

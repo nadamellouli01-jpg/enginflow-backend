@@ -21,7 +21,7 @@ public class UtilisateurService {
         utilisateur.setPrenom(request.getPrenom());
         utilisateur.setEmail(request.getEmail());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
-        utilisateur.setRole(request.getRole());
+        utilisateur.setRole("DEMANDEUR");
 
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 

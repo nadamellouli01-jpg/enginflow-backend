@@ -8,5 +8,5 @@ public class UtilisateurRequestDTO {
     private String prenom;
     private String email;
     private String motDePasse;
-    private String role;
+
 }
